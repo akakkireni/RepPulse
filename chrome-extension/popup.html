@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rep Pulse</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --ink: #0f172a;
+        --muted: #64748b;
+        --line: #e9edf3;
+        --accent: #4f46e5;
+        --accent-2: #6366f1;
+        --danger: #e11d48;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        width: 268px;
+        padding: 18px 18px 16px;
+        background: var(--bg);
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .pulse {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.45);
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.45);
+        }
+        70% {
+          box-shadow: 0 0 0 7px rgba(79, 70, 229, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+        }
+      }
+
+      .brand h1 {
+        font-size: 15px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+
+      .count {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 16px;
+        background: linear-gradient(180deg, #fafbff 0%, #f5f6fb 100%);
+      }
+
+      .count .num {
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+
+      .count .lbl {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 11px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+        transition: transform 0.06s ease, background 0.15s ease,
+          box-shadow 0.15s ease, border-color 0.15s ease;
+      }
+
+      button:hover {
+        background: #f8fafc;
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      button.primary {
+        border: none;
+        color: #fff;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.32);
+      }
+
+      button.primary:hover {
+        background: linear-gradient(135deg, #4338ca, #5558e8);
+      }
+
+      button.ghost {
+        color: var(--muted);
+        border-color: transparent;
+        background: transparent;
+        font-weight: 500;
+      }
+
+      button.ghost:hover {
+        background: #f8fafc;
+        color: var(--danger);
+      }
+
+      button svg {
+        width: 15px;
+        height: 15px;
+        flex: none;
+      }
+
+      #status {
+        font-size: 11px;
+        color: var(--muted);
+        text-align: center;
+        min-height: 1.3em;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="brand">
+      <span class="pulse"></span>
+      <h1>Rep Pulse</h1>
+    </div>
+
+    <div class="count">
+      <div class="num" id="recordCount">0</div>
+      <div class="lbl">Calls captured</div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="primary" id="downloadFull">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download report
+      </button>
+      <button type="button" class="ghost" id="clear">Clear logs</button>
+    </div>
+
+    <div id="status" aria-live="polite"></div>
+
+    <script src="config.js"></script>
+    <script src="report.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
