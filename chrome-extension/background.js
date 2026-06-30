@@ -10,11 +10,16 @@ const STATIC_OR_ASSET_PATTERN =
 let pendingByRequestId = new Map();
 let persistChain = Promise.resolve();
 
+const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
 function parseQueryParams(urlString) {
   try {
     const u = new URL(urlString);
-    const params = {};
+    // Null-prototype object + key guard: query keys are fully caller-controlled,
+    // so this prevents any prototype-pollution via a crafted parameter name.
+    const params = Object.create(null);
     u.searchParams.forEach((value, key) => {
+      if (UNSAFE_KEYS.has(key)) return;
       if (params[key] !== undefined) {
         const existing = params[key];
         params[key] = Array.isArray(existing) ? [...existing, value] : [existing, value];

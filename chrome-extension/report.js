@@ -173,35 +173,28 @@ function buildSummary(rows) {
   let totalDurationMs = 0;
   let reviewApiCalls = 0;
   let ticketApiCalls = 0;
-  const byReviewId = {};
-  const byTicketId = {};
-  const byPath = {};
+  // Maps keep data-derived keys (paths, ids) off Object.prototype.
+  const byReviewId = new Map();
+  const byTicketId = new Map();
+  const byPath = new Map();
+
+  const bump = (map, key, dur) => {
+    let e = map.get(key);
+    if (!e) {
+      e = { calls: 0, totalDurationMs: 0 };
+      map.set(key, e);
+    }
+    e.calls += 1;
+    e.totalDurationMs += dur;
+  };
 
   for (const r of rows) {
     totalDurationMs += r.durationMs;
     if (r.reviewRelated) reviewApiCalls += 1;
     if (r.ticketRelated) ticketApiCalls += 1;
-
-    if (!byPath[r.path]) {
-      byPath[r.path] = { calls: 0, totalDurationMs: 0 };
-    }
-    byPath[r.path].calls += 1;
-    byPath[r.path].totalDurationMs += r.durationMs;
-
-    if (r.reviewId) {
-      if (!byReviewId[r.reviewId]) {
-        byReviewId[r.reviewId] = { calls: 0, totalDurationMs: 0 };
-      }
-      byReviewId[r.reviewId].calls += 1;
-      byReviewId[r.reviewId].totalDurationMs += r.durationMs;
-    }
-    if (r.ticketId) {
-      if (!byTicketId[r.ticketId]) {
-        byTicketId[r.ticketId] = { calls: 0, totalDurationMs: 0 };
-      }
-      byTicketId[r.ticketId].calls += 1;
-      byTicketId[r.ticketId].totalDurationMs += r.durationMs;
-    }
+    bump(byPath, r.path, r.durationMs);
+    if (r.reviewId) bump(byReviewId, r.reviewId, r.durationMs);
+    if (r.ticketId) bump(byTicketId, r.ticketId, r.durationMs);
   }
 
   return {
@@ -209,9 +202,9 @@ function buildSummary(rows) {
     totalDurationMs,
     reviewApiCalls,
     ticketApiCalls,
-    byReviewId,
-    byTicketId,
-    byPath,
+    byReviewId: Object.fromEntries(byReviewId),
+    byTicketId: Object.fromEntries(byTicketId),
+    byPath: Object.fromEntries(byPath),
   };
 }
 
@@ -314,11 +307,14 @@ function applyCarryForward(rows) {
 }
 
 function buildTicketGroups(rows) {
-  const m = {};
+  // Keyed by ticketId via a Map (not a plain object) so a data-derived key such
+  // as "__proto__" can never reach Object.prototype.
+  const m = new Map();
   for (const r of rows) {
     const k = r.groupKey;
-    if (!m[k]) {
-      m[k] = {
+    let g = m.get(k);
+    if (!g) {
+      g = {
         groupTicket: r.groupTicket,
         groupKey: k,
         isOther: k === "__other__",
@@ -330,8 +326,8 @@ function buildTicketGroups(rows) {
         msOther: 0,
         firstStart: Infinity,
       };
+      m.set(k, g);
     }
-    const g = m[k];
     g.calls.push(r);
     g.totalDurationMs += r.durationMs;
     if (typeof r.startTimeMs === "number" && r.startTimeMs < g.firstStart) {
@@ -345,18 +341,28 @@ function buildTicketGroups(rows) {
     else g.msOther += r.durationMs;
   }
   // Ticket groups first, in order of first appearance; "Other" always last.
-  return Object.values(m).sort((a, b) => {
+  return Array.from(m.values()).sort((a, b) => {
     if (a.isOther !== b.isOther) return a.isOther ? 1 : -1;
     return a.firstStart - b.firstStart;
   });
 }
 
+// HTML-entity-encode every character that is significant in HTML element OR
+// attribute context (single + double quotes, backtick, =, /), so a captured
+// value can never break out of the markup in the generated static report.
+const HTML_ESCAPES = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+  "`": "&#96;",
+  "=": "&#61;",
+  "/": "&#47;",
+};
+
 function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return String(s).replace(/[&<>"'`=/]/g, (ch) => HTML_ESCAPES[ch]);
 }
 
 function buildHtmlDocument(full) {
